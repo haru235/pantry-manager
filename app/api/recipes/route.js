@@ -14,11 +14,13 @@ const openai = new OpenAI({
 
 export async function POST(req) {
   const { ingredients, prev } = await req.json();
+  console.log(prev)
 
   try {
     let prompt = `Following are pantry items: ${ingredients.join(', ')}. Give me a recipe suggestion in following format: {"title": "", "servingSize": , "ingredientsNeeded": [with amount needed for this recipe], "instructions": []} without extra text.`;
-    if (prev != null) 
-      prompt += `Other than ${prev}`
+    if (prev) 
+      prompt += `Something other than ${prev}`
+    console.log(prompt);
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [

@@ -66,7 +66,9 @@ const ModalContent = styled(Box)({
   width: 400,
 });
 
-const PantryItem = styled(ListItem)(({ expired }) => ({
+const PantryItem = styled(ListItem, {
+  shouldForwardProp: (prop) => prop !== 'expired',
+})(({ expired }) => ({
   backgroundColor: expired ? "#ffcccb" : "#ffffff",
   borderRadius: 8,
   marginBottom: "16px",
@@ -245,7 +247,7 @@ export default function Home() {
     const ingredientList = pantry.map(
       (item) => `${item.name} (${item.quantity} ${item.unit})`
     );
-    fetchRecipeRecommendations(ingredientList, recipe.title)
+    fetchRecipeRecommendations(ingredientList, String(recipe.title))
       .then((recipes) => {
         setRecipe(recipes);
         setGenerating(false);
@@ -418,10 +420,10 @@ export default function Home() {
               <Card>
                 <CardContent>
                   <Typography variant="h5" gutterBottom>
-                    {recipe.title}
+                    {String(recipe.title)}
                   </Typography>
                   <Typography variant="h6" gutterBottom>
-                    Serving Size: {recipe.servingSize}
+                    Serving Size: {String(recipe.servingSize)}
                   </Typography>
                   <Typography variant="h6" gutterBottom>
                     Ingredients
@@ -429,7 +431,7 @@ export default function Home() {
                   <List>
                     {recipe.ingredientsNeeded.map((ingredient, index) => (
                       <ListItem key={index}>
-                        <Typography variant="body1">{ingredient}</Typography>
+                        <Typography variant="body1">{String(ingredient)}</Typography>
                       </ListItem>
                     ))}
                   </List>
@@ -441,7 +443,7 @@ export default function Home() {
                     {recipe.instructions.map((instruction, index) => (
                       <ListItem key={index}>
                         <Typography variant="body1">
-                          {`${index + 1}. ${instruction}`}
+                          {`${index + 1}. ${String(instruction)}`}
                         </Typography>
                       </ListItem>
                     ))}
