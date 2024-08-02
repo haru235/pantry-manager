@@ -26,6 +26,7 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
+  CircularProgress,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -67,7 +68,7 @@ const ModalContent = styled(Box)({
 });
 
 const PantryItem = styled(ListItem, {
-  shouldForwardProp: (prop) => prop !== 'expired',
+  shouldForwardProp: (prop) => prop !== "expired",
 })(({ expired }) => ({
   backgroundColor: expired ? "#ffcccb" : "#ffffff",
   borderRadius: 8,
@@ -409,7 +410,16 @@ export default function Home() {
               disabled={generating}
               sx={{ mb: 3 }}
             >
-              {recipe ? "Regenerate Recipe" : "Get Recipe Recommendation"}
+              {generating ? (
+                <CircularProgress
+                  size={24}
+                  sx={{ color: "white", marginX: "12px" }}
+                />
+              ) : recipe ? (
+                "Regenerate Recipe"
+              ) : (
+                "Get Recipe Recommendation"
+              )}
             </Button>
             {error && (
               <Typography color="error" sx={{ mt: 2 }}>
@@ -431,7 +441,9 @@ export default function Home() {
                   <List>
                     {recipe.ingredientsNeeded.map((ingredient, index) => (
                       <ListItem key={index}>
-                        <Typography variant="body1">{String(ingredient)}</Typography>
+                        <Typography variant="body1">
+                          {String(ingredient)}
+                        </Typography>
                       </ListItem>
                     ))}
                   </List>
