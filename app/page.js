@@ -248,6 +248,7 @@ export default function Home() {
     const ingredientList = pantry.map(
       (item) => `${item.name} (${item.quantity} ${item.unit})`
     );
+    console.log(recipe.title)
     fetchRecipeRecommendations(ingredientList, String(recipe.title))
       .then((recipes) => {
         setRecipe(recipes);
@@ -432,8 +433,14 @@ export default function Home() {
                   <Typography variant="h5" gutterBottom>
                     {String(recipe.title)}
                   </Typography>
-                  <Typography variant="h6" gutterBottom>
-                    Serving Size: {String(recipe.servingSize)}
+                  <Typography variant="h7" >
+                    Serving Size: {String(recipe.servingSize) + ' | '}
+                  </Typography>
+                  <Typography variant="h7" >
+                    Prep: {String(recipe.prepTime) + ' | '}
+                  </Typography>
+                  <Typography variant="h7" >
+                    Cook: {String(recipe.cookTime)}
                   </Typography>
                   <Typography variant="h6" gutterBottom>
                     Ingredients

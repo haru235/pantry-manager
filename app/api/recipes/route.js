@@ -17,7 +17,7 @@ export async function POST(req) {
   console.log(prev)
 
   try {
-    let prompt = `Following are pantry items: ${ingredients.join(', ')}. Give me a recipe suggestion in following format: {"title": "", "servingSize": , "ingredientsNeeded": [with amount needed for this recipe], "instructions": []} without extra text.`;
+    let prompt = `Following are pantry items: ${ingredients.join(', ')}. Give me a recipe suggestion in following format: {"title": "", "servingSize": "", "prepTime": "", "cookTime": "", "ingredientsNeeded": ["item1", "item2" (with amount needed for this recipe)], "instructions": ["step1". "step2"]} without extra text.`;
     if (prev) 
       prompt += `Something other than ${prev}`
     console.log(prompt);
