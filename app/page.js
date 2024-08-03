@@ -487,7 +487,7 @@ export default function Home() {
             type="number"
             value={quantity}
             onChange={(e) => setQuantity(Number(e.target.value))}
-            error={quantity <= 0}
+            error={quantity < 0}
             helperText={quantity <= 0 ? "Quantity must be greater than 0." : ""}
             sx={{ mb: 2 }}
           />
