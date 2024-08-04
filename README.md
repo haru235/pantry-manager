@@ -21,7 +21,7 @@ A web application that helps users manage their pantry items and provides recipe
 ### Prerequisites
 
 - Node.js (>= 14.x)
-- npm or yarn
+- npm
 
 ### Installation
 
@@ -32,15 +32,13 @@ A web application that helps users manage their pantry items and provides recipe
 
 2. Install dependencies
 
-npm install
-# or
-yarn install
+- npm install
 
 3. Set up Firebase
 
-Create a Firebase project at Firebase Console
-Add a new web app to the project
-Copy the Firebase configuration and replace the placeholders in src/firebase.js:
+- Create a Firebase project at Firebase Console
+- Add a new web app to the project
+- Copy the Firebase configuration and replace the placeholders in src/firebase.js:
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -61,24 +59,22 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 5. Run the development server
 
 npm run dev
-# or
-yarn dev
 
 4. Open http://localhost:3000 to see the application in action.
 
 ##Usage
 1. Add Pantry Items
 
-Click the "Add Item" button to add a new pantry item.
-Fill in the details and save.
+- Click the "Add Item" button to add a new pantry item.
+- Fill in the details and save.
 
 2. Edit or Delete Pantry Items
 
-Use the edit and delete icons next to each pantry item to modify or remove them.
+- Use the edit and delete icons next to each pantry item to modify or remove them.
 
 3. View Recipe Recommendations
 
-The right section displays recipes based on the items in your pantry.
+- The right section displays recipes based on the items in your pantry.
 
 ##Folder Structure
 
@@ -108,10 +104,10 @@ pantry-manager/
 
 ##License
 
-Distributed under the MIT License. See LICENSE for more information.
+- Distributed under the MIT License. See LICENSE for more information.
 
 ##Contact
-Haru - harusakai0515@gmail.com
+- Haru - harusakai0515@gmail.com
 
 
 
