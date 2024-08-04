@@ -301,18 +301,18 @@ export default function Home() {
               </Typography>
               <Typography variant="body1" paragraph>
                 1. Manage Your Pantry: Add, edit, or remove items in your pantry
-                using the "Pantry Items" section.
+                using the &quot;Pantry Items&quot; section.
               </Typography>
               <Typography variant="body1" paragraph>
-                2. Get Recipe Suggestions: Click "Get Recipe" to receive a
+                2. Get Recipe Suggestions: Click &quot;Get Recipe&quot; to receive a
                 recipe suggestion based on your pantry items.
               </Typography>
               <Typography variant="body1" paragraph>
-                3. Generate Shopping List: Set a budget and click "Get Shopping
-                List" to generate a list of items to buy.
+                3. Generate Shopping List: Set a budget and click &quot;Get Shopping
+                List&quot; to generate a list of items to buy.
               </Typography>
               <Typography variant="body1">
-                4. Add to Pantry: Click the "+" icon on shopping list items to
+                4. Add to Pantry: Click the &quot;+&quot; icon on shopping list items to
                 quickly add them to your pantry.
               </Typography>
             </Paper>
