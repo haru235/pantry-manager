@@ -27,8 +27,8 @@ A web application that helps users manage their pantry items and provides recipe
 
 1. **Clone the repository**
 
-git clone https://github.com/yourusername/pantry-recipe-dashboard.git
-cd pantry-recipe-dashboard
+- git clone https://github.com/yourusername/pantry-manager.git
+- cd pantry-recipe-dashboard
 
 2. Install dependencies
 
@@ -53,8 +53,8 @@ const firebaseConfig = {
 
 4. Set up OpenAI API
 
-Get your OpenAI API key from OpenAI
-Replace the placeholder in your API call file (e.g., src/api/recipes.js) with your OpenAI API key:
+- Get your OpenAI API key from OpenAI
+- Replace the placeholder in your API call file (e.g., src/api/recipes.js) with your OpenAI API key:
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
