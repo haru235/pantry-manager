@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+// Import necessary dependencies
+import React, { useState, useEffect } from "react";
+import { styled, createTheme, ThemeProvider } from "@mui/material/styles";
 import {
   Box,
   Container,
@@ -16,42 +17,84 @@ import {
   ListItem,
   Card,
   CardContent,
-  Divider,
   IconButton,
+  Grid,
+  CircularProgress,
+  Chip,
+  AppBar,
+  Toolbar,
+  CssBaseline,
   InputAdornment,
   Paper,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-  CircularProgress,
 } from "@mui/material";
-import { styled } from "@mui/system";
-import ClearIcon from "@mui/icons-material/Clear";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import KitchenIcon from "@mui/icons-material/Kitchen";
-import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
-import { firestore } from "@/firebase";
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Kitchen as KitchenIcon,
+  RestaurantMenu as RestaurantMenuIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Info as InfoIcon,
+} from "@mui/icons-material";
 import {
   collection,
   deleteDoc,
   doc,
-  getDoc,
   getDocs,
   query,
   setDoc,
 } from "firebase/firestore";
-import { differenceInDays, parseISO } from "date-fns";
+import { firestore } from "@/firebase";
+import axios from "axios";
 
-const StyledPaper = styled(Paper)({
-  padding: "24px",
-  margin: "16px 0",
-  backgroundColor: "#f8f8f8",
-  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+// Create a custom theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#2196f3", // Blue
+    },
+    secondary: {
+      main: "#ff9800", // Orange
+    },
+    background: {
+      default: "#f5f5f5",
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 600,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+        },
+      },
+    },
+  },
 });
+
+// Styled components
+const StyledCard = styled(Card)(({ theme }) => ({
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  transition: "transform 0.3s ease-in-out",
+  "&:hover": {
+    transform: "translateY(-5px)",
+  },
+}));
 
 const StyledModal = styled(Modal)({
   display: "flex",
@@ -59,48 +102,36 @@ const StyledModal = styled(Modal)({
   justifyContent: "center",
 });
 
-const ModalContent = styled(Box)({
-  backgroundColor: "#ffffff",
+const ModalContent = styled(Box)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
   borderRadius: 8,
-  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-  padding: "32px",
+  boxShadow: theme.shadows[5],
+  padding: theme.spacing(4),
   width: 400,
-});
-
-const PantryItem = styled(ListItem, {
-  shouldForwardProp: (prop) => prop !== "expired",
-})(({ expired }) => ({
-  backgroundColor: expired ? "#ffcccb" : "#ffffff",
-  borderRadius: 8,
-  marginBottom: "16px",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
 }));
 
-const unitOptions = [
-  "g",
-  "kg",
-  "lbs",
-  "oz", // Weight
-  "gal",
-  "ml",
-  "L",
-  "cups",
-  "tbsp",
-  "tsp",
-  "fl oz", // Volume
-  "pcs",
-  "packs",
-  "cans",
-  "jars",
-  "bottles", // Count
-  "slices",
-  "servings",
-  "loaves",
-  "sticks",
-  "bars",
-];
+const StyledFooter = styled(Box)(({ theme }) => ({
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  padding: theme.spacing(3, 0),
+  marginTop: "auto",
+}));
 
+const Footer = ({ name }) => {
+  return (
+    <StyledFooter component="footer">
+      <Container maxWidth="lg">
+        <Typography variant="body1" align="center">
+          © {new Date().getFullYear()} {name}. All rights reserved.
+        </Typography>
+      </Container>
+    </StyledFooter>
+  );
+};
+
+// Main component
 export default function Home() {
+  // State declarations
   const [pantry, setPantry] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
@@ -109,56 +140,37 @@ export default function Home() {
   const [quantity, setQuantity] = useState(1);
   const [searchText, setSearchText] = useState("");
   const [error, setError] = useState("");
-  const [recipe, setRecipe] = useState("");
+  const [recipe, setRecipe] = useState({ title: "" });
+  const [shoppingList, setShoppingList] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isShoppingItem, setIsShoppingItem] = useState(false);
+  const [shoppingBudget, setShoppingBudget] = useState("100");
 
-  const handleConfirmOpen = () => {
-    setConfirmOpen(true);
-  };
-
-  const handleConfirmClose = () => {
-    setConfirmOpen(false);
-  };
-
-  const handleDeleteExpiredItems = () => {
-    deleteExpiredItems();
-    setConfirmOpen(false);
-  };
-
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => {
-    setOpen(false);
-    setEditingItem(null);
-    setItemName("");
-    setQuantity(1);
-    setUnit("pcs");
-    setExpirationDate("");
-    setError("");
-  };
-
-  const updatePantry = async () => {
-    const snapshot = query(collection(firestore, "pantry"));
-    const docs = await getDocs(snapshot);
-    const pantryList = [];
-    docs.forEach((doc) => {
-      pantryList.push({ id: doc.id, ...doc.data() });
-    });
-    console.log(pantryList);
-    setPantry(pantryList);
-  };
-
+  // Effect to fetch pantry items on component mount
   useEffect(() => {
     updatePantry();
   }, []);
 
-  const filteredPantry = useMemo(() => {
-    return pantry.filter((item) =>
-      item.name.includes(searchText.toLowerCase())
-    );
-  }, [pantry, searchText]);
+  // Function to fetch and update pantry items
+  const updatePantry = async () => {
+    const snapshot = query(collection(firestore, "pantry"));
+    const docs = await getDocs(snapshot);
+    const pantryList = docs.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setPantry(pantryList);
+  };
 
+  const handleShoppingItemClick = (item) => {
+    setEditingItem(null);
+    setItemName(item.item);
+    setQuantity(item.quantity);
+    setUnit(item.unit);
+    setExpirationDate("");
+    setIsShoppingItem(true);
+    setOpen(true);
+  };
+
+  // Function to add or update an item in the pantry
   const addOrUpdateItem = async (itemName, quantity, unit, expirationDate) => {
     const collectionRef = collection(firestore, "pantry");
     const docRef = editingItem
@@ -168,15 +180,89 @@ export default function Home() {
       docRef,
       {
         name: itemName.toLowerCase(),
-        quantity: quantity,
-        unit: unit,
-        expirationDate: expirationDate,
+        quantity,
+        unit,
+        expirationDate,
       },
       { merge: true }
     );
     await updatePantry();
+
+    if (isShoppingItem) {
+      setShoppingList((prevList) => ({
+        ...prevList,
+        items: prevList.items.filter(
+          (item) => item.item.toLowerCase() !== itemName.toLowerCase()
+        ),
+      }));
+      setIsShoppingItem(false);
+    }
+
+    handleClose();
   };
 
+  // Function to delete an item from the pantry
+  const deleteItem = async (id) => {
+    const docRef = doc(firestore, "pantry", id);
+    await deleteDoc(docRef);
+    await updatePantry();
+  };
+
+  // Function to generate a recipe recommendation
+  const generateRecipe = async () => {
+    setGenerating(true);
+    const ingredientList = pantry.map(
+      (item) => `${item.name} (${item.quantity} ${item.unit})`
+    );
+    try {
+      const response = await axios.post("/api/recipes", {
+        ingredients: ingredientList,
+        prev: recipe.title,
+      });
+      const recipeData = JSON.parse(response.data);
+      setRecipe(recipeData);
+    } catch (error) {
+      console.error("Failed to fetch recipes:", error);
+      setError("Failed to generate recipe. Please try again.");
+      setRecipe(null);
+    }
+    setGenerating(false);
+  };
+
+  // Function to generate a shopping list
+  const generateShoppingList = async () => {
+    setGenerating(true);
+    const pantryItems = pantry.map(
+      (item) => `${item.name} (${item.quantity} ${item.unit})`
+    );
+    try {
+      const response = await axios.post("/api/shoppingLists", {
+        pantryItems,
+        budget: shoppingBudget ? parseFloat(shoppingBudget) : undefined,
+      });
+      setShoppingList(response.data);
+    } catch (error) {
+      console.error("Failed to generate shopping list:", error);
+      setError("Failed to generate shopping list. Please try again.");
+      setShoppingList([]);
+    }
+    setGenerating(false);
+  };
+
+  // Modal control functions
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => {
+    setOpen(false);
+    setEditingItem(null);
+    setItemName("");
+    setQuantity(1);
+    setUnit("pcs");
+    setExpirationDate("");
+    setError("");
+    setIsShoppingItem(false);
+  };
+
+  // Function to open edit modal
   const handleEditOpen = (item) => {
     setEditingItem(item);
     setItemName(item.name);
@@ -186,356 +272,370 @@ export default function Home() {
     setOpen(true);
   };
 
-  const deleteItem = async (id) => {
-    const docRef = doc(firestore, "pantry", id);
-    await deleteDoc(docRef);
-    await updatePantry();
-  };
-
-  const handleAddOrUpdateItem = () => {
-    if (!itemName.trim()) {
-      setError("Item name is required.");
-      return;
-    }
-    if (quantity <= 0) {
-      setError("Quantity must be greater than 0.");
-      return;
-    }
-    setError("");
-    addOrUpdateItem(itemName, quantity, unit, expirationDate);
-    handleClose();
-  };
-
-  const deleteExpiredItems = () => {
-    const expiredItems = pantry.filter(
-      (item) => calculateDaysUntilExpiration(item.expirationDate) === "Expired"
-    );
-    expiredItems.forEach((item) => deleteItem(item.id));
-  };
-
-  const fetchRecipeRecommendations = async (ingredients) => {
-    try {
-      const response = await axios.post("/api/recipes", { ingredients });
-      const responseData = response.data;
-
-      // Log the raw response for debugging
-      console.log("Raw response:", responseData);
-
-      // Check if the response is already a JSON object
-      if (typeof responseData === "object" && responseData !== null) {
-        return responseData;
-      }
-
-      // If it's a string, try to parse it as JSON
-      if (typeof responseData === "string") {
-        try {
-          return JSON.parse(responseData);
-        } catch (parseError) {
-          console.error("Error parsing JSON:", parseError);
-          throw new Error("Invalid response format");
-        }
-      }
-
-      throw new Error("Unexpected response format");
-    } catch (error) {
-      console.error("Error fetching recipe recommendations:", error);
-      throw new Error("Failed to fetch recipe recommendations");
-    }
-  };
-
-  const fetchRecipe = async () => {
-    setGenerating(true);
-    const ingredientList = pantry.map(
-      (item) => `${item.name} (${item.quantity} ${item.unit})`
-    );
-    console.log(recipe.title)
-    fetchRecipeRecommendations(ingredientList, String(recipe.title))
-      .then((recipes) => {
-        setRecipe(recipes);
-        setGenerating(false);
-      })
-      .catch((error) => {
-        console.error("Failed to fetch recipes:", error);
-        setGenerating(false);
-      });
-  };
-
-  // Function to calculate days until expiration
-  const calculateDaysUntilExpiration = (expirationDate) => {
-    const today = new Date();
-    const expiration = parseISO(expirationDate);
-    const expiresIn = differenceInDays(expiration, today) + 1;
-    if (expiresIn > 0) return `Expires in ${expiresIn} days`;
-    return "Expired";
-  };
-
+  // Main render
   return (
-    <Container maxWidth="xl">
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={6}>
-          <StyledPaper elevation={3}>
-            <Typography variant="h4" gutterBottom>
-              <KitchenIcon sx={{ mr: 1 }} />
-              Pantry Management
-            </Typography>
-            <Box display="flex" mb={2}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleOpen}
-                sx={{ mr: 2 }}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box
+        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+      >
+        <Box sx={{ flexGrow: 1 }}>
+          <AppBar position="static" color="primary">
+            <Toolbar>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ flexGrow: 1 }}
+                textAlign={"center"}
               >
-                Add New Item
-              </Button>
+                Welcome to PantryAI
+              </Typography>
+            </Toolbar>
+          </AppBar>
+          <Container maxWidth="lg" sx={{ mt: 4 }}>
+            {/* Instructions Section */}
+            <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+              <Typography variant="h5" gutterBottom>
+                <InfoIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                How to Use PantryAI
+              </Typography>
+              <Typography variant="body1" paragraph>
+                1. Manage Your Pantry: Add, edit, or remove items in your pantry
+                using the &quot;Pantry Items&quot; section.
+              </Typography>
+              <Typography variant="body1" paragraph>
+                2. Get Recipe Suggestions: Click &quot;Get Recipe&quot; to receive a
+                recipe suggestion based on your pantry items.
+              </Typography>
+              <Typography variant="body1" paragraph>
+                3. Generate Shopping List: Set a budget and click &quot;Get Shopping
+                List&quot; to generate a list of items to buy.
+              </Typography>
+              <Typography variant="body1">
+                4. Add to Pantry: Click the &quot;+&quot; icon on shopping list items to
+                quickly add them to your pantry.
+              </Typography>
+            </Paper>
+
+            <Grid container spacing={4}>
+              {/* Pantry Management Section */}
+              <Grid item xs={12} md={6} sx={{ maxHeight: 700 }}>
+                <StyledCard>
+                  <CardContent
+                    sx={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <Typography variant="h5" gutterBottom>
+                      <KitchenIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                      Pantry Items
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      label="Search Items"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      sx={{ mb: 2 }}
+                    />
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={handleOpen}
+                      sx={{ mb: 2 }}
+                    >
+                      Add Item
+                    </Button>
+                    <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
+                      <List>
+                        {pantry
+                          .filter((item) =>
+                            item.name.includes(searchText.toLowerCase())
+                          )
+                          .map((item) => (
+                            <ListItem
+                              key={item.id}
+                              secondaryAction={
+                                <>
+                                  <IconButton
+                                    edge="end"
+                                    aria-label="edit"
+                                    onClick={() => handleEditOpen(item)}
+                                  >
+                                    <EditIcon />
+                                  </IconButton>
+                                  <IconButton
+                                    edge="end"
+                                    aria-label="delete"
+                                    onClick={() => deleteItem(item.id)}
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </>
+                              }
+                            >
+                              <Box>
+                                <Typography variant="subtitle1">
+                                  {item.name.charAt(0).toUpperCase() +
+                                    item.name.slice(1)}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  {item.quantity} {item.unit} | Expires:{" "}
+                                  {item.expirationDate || "N/A"}
+                                </Typography>
+                              </Box>
+                            </ListItem>
+                          ))}
+                      </List>
+                    </Box>
+                  </CardContent>
+                </StyledCard>
+              </Grid>
+
+              {/* Recipe Suggestion Section */}
+              <Grid item xs={12} md={6} sx={{ maxHeight: 700 }}>
+                <StyledCard>
+                  <CardContent
+                    sx={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <Typography variant="h5" gutterBottom>
+                      <RestaurantMenuIcon
+                        sx={{ mr: 1, verticalAlign: "middle" }}
+                      />
+                      Recipe Suggestion
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={generateRecipe}
+                      disabled={generating}
+                      sx={{ mb: 2 }}
+                    >
+                      {generating ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        "Get Recipe"
+                      )}
+                    </Button>
+                    <Box sx={{ flexGrow: 1, overflow: "auto" }}>
+                      {recipe.title != "" && (
+                        <Box>
+                          <Typography variant="h6">{recipe.title}</Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 1 }}
+                          >
+                            Prep: {recipe.prepTime} | Cook: {recipe.cookTime} |
+                            Serves: {recipe.servingSize}
+                          </Typography>
+                          <Typography variant="subtitle1">
+                            Ingredients:
+                          </Typography>
+                          <List>
+                            {recipe.ingredientsNeeded.map(
+                              (ingredient, index) => (
+                                <ListItem key={index}>
+                                  <Chip label={ingredient} />
+                                </ListItem>
+                              )
+                            )}
+                          </List>
+                          <Typography variant="subtitle1">
+                            Instructions:
+                          </Typography>
+                          <List>
+                            {recipe.instructions.map((instruction, index) => (
+                              <ListItem key={index}>
+                                <Typography variant="body2">{`${
+                                  index + 1
+                                }. ${instruction}`}</Typography>
+                              </ListItem>
+                            ))}
+                          </List>
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </StyledCard>
+              </Grid>
+
+              {/* Shopping List Section */}
+              <Grid item xs={12} spacing={4}>
+                <StyledCard>
+                  <CardContent>
+                    <Typography variant="h5" gutterBottom>
+                      <ShoppingCartIcon
+                        sx={{ mr: 1, verticalAlign: "middle" }}
+                      />
+                      Shopping List
+                    </Typography>
+                    <Grid
+                      container
+                      spacing={2}
+                      alignItems="center"
+                      sx={{ mb: 2 }}
+                    >
+                      <Grid item xs={12} sm={6} md={4}>
+                        <TextField
+                          fullWidth
+                          label="Budget"
+                          type="number"
+                          value={shoppingBudget}
+                          onChange={(e) => setShoppingBudget(e.target.value)}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                $
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            height: "56px",
+                            "& .MuiInputBase-root": { height: "56px" },
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6} md={4}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          color="secondary"
+                          onClick={generateShoppingList}
+                          disabled={generating}
+                          sx={{ height: "56px" }}
+                        >
+                          {generating ? (
+                            <CircularProgress size={24} />
+                          ) : (
+                            "Get Shopping List"
+                          )}
+                        </Button>
+                      </Grid>
+                    </Grid>
+                    {shoppingList && (
+                      <Grid container spacing={2}>
+                        {shoppingList.items.map((item, index) => (
+                          <Grid item xs={6} sm={4} md={3} key={index}>
+                            <Chip
+                              label={
+                                item.item +
+                                " (" +
+                                item.quantity +
+                                " " +
+                                item.unit +
+                                ")"
+                              }
+                              onDelete={() => handleShoppingItemClick(item)}
+                              deleteIcon={<AddIcon />}
+                              sx={{
+                                width: "100%",
+                                justifyContent: "space-between",
+                              }}
+                            />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    )}
+                  </CardContent>
+                </StyledCard>
+              </Grid>
+            </Grid>
+          </Container>
+
+          {/* Add/Edit Item Modal */}
+          <StyledModal open={open} onClose={handleClose}>
+            <ModalContent>
+              <Typography variant="h6" component="h2" gutterBottom>
+                {editingItem
+                  ? "Edit Item"
+                  : isShoppingItem
+                  ? "Add to Pantry"
+                  : "Add New Item"}
+              </Typography>
               <TextField
                 fullWidth
-                variant="outlined"
-                label="Search"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                InputProps={{
-                  endAdornment: searchText && (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setSearchText("")}>
-                        <ClearIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
+                label="Item Name"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                sx={{ mb: 2 }}
               />
-            </Box>
-            <List>
-              {filteredPantry.map(
-                ({ id, name, quantity, unit, expirationDate }) => {
-                  const expiration = expirationDate
-                    ? calculateDaysUntilExpiration(expirationDate)
-                    : "N/A";
-                  return (
-                    <PantryItem key={id} expired={expiration === "Expired"}>
-                      <Grid container alignItems="center" spacing={2}>
-                        <Grid item xs={12} sm={3}>
-                          <Typography variant="subtitle1">
-                            {name.charAt(0).toUpperCase() + name.slice(1)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={3}>
-                          <Typography variant="body1">
-                            {quantity} {unit}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={3}>
-                          <Typography variant="body2" color="textSecondary">
-                            {expiration}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={3}>
-                          <Box display="flex" justifyContent="flex-end">
-                            <IconButton
-                              onClick={() =>
-                                handleEditOpen({
-                                  id,
-                                  name,
-                                  quantity,
-                                  unit,
-                                  expirationDate,
-                                })
-                              }
-                              color="primary"
-                              size="small"
-                            >
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton
-                              onClick={() => deleteItem(id)}
-                              color="error"
-                              size="small"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </PantryItem>
-                  );
-                }
-              )}
-            </List>
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={handleConfirmOpen}
-              sx={{ mt: 2 }}
-            >
-              Delete Expired Items
-            </Button>
-            <Dialog
-              open={confirmOpen}
-              onClose={handleConfirmClose}
-              aria-labelledby="confirm-dialog-title"
-              aria-describedby="confirm-dialog-description"
-            >
-              <DialogTitle id="confirm-dialog-title">
-                Confirm Deletion
-              </DialogTitle>
-              <DialogContent>
-                <DialogContentText id="confirm-dialog-description">
-                  Are you sure you want to delete all expired items?
-                </DialogContentText>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleConfirmClose} color="primary">
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDeleteExpiredItems}
-                  color="secondary"
-                  autoFocus
+              <TextField
+                fullWidth
+                label="Quantity"
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                sx={{ mb: 2 }}
+              />
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Unit</InputLabel>
+                <Select
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  label="Unit"
                 >
-                  Confirm
-                </Button>
-              </DialogActions>
-            </Dialog>
-          </StyledPaper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <StyledPaper elevation={3}>
-            <Typography variant="h4" gutterBottom>
-              <RestaurantMenuIcon sx={{ mr: 1 }} />
-              Recipe Suggestions
-            </Typography>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={fetchRecipe}
-              disabled={generating}
-              sx={{ mb: 3 }}
-            >
-              {generating ? (
-                <CircularProgress
-                  size={24}
-                  sx={{ color: "white", marginX: "12px" }}
-                />
-              ) : recipe ? (
-                "Regenerate Recipe"
-              ) : (
-                "Get Recipe Recommendation"
-              )}
-            </Button>
-            {error && (
-              <Typography color="error" sx={{ mt: 2 }}>
-                {error}
-              </Typography>
-            )}
-            {recipe && (
-              <Card>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    {String(recipe.title)}
-                  </Typography>
-                  <Typography variant="h7" >
-                    Serving Size: {String(recipe.servingSize) + ' | '}
-                  </Typography>
-                  <Typography variant="h7" >
-                    Prep: {String(recipe.prepTime) + ' | '}
-                  </Typography>
-                  <Typography variant="h7" >
-                    Cook: {String(recipe.cookTime)}
-                  </Typography>
-                  <Typography variant="h6" gutterBottom>
-                    Ingredients
-                  </Typography>
-                  <List>
-                    {recipe.ingredientsNeeded.map((ingredient, index) => (
-                      <ListItem key={index}>
-                        <Typography variant="body1">
-                          {String(ingredient)}
-                        </Typography>
-                      </ListItem>
-                    ))}
-                  </List>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" gutterBottom>
-                    Instructions
-                  </Typography>
-                  <List>
-                    {recipe.instructions.map((instruction, index) => (
-                      <ListItem key={index}>
-                        <Typography variant="body1">
-                          {`${index + 1}. ${String(instruction)}`}
-                        </Typography>
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            )}
-          </StyledPaper>
-        </Grid>
-      </Grid>
-
-      <StyledModal open={open} onClose={handleClose}>
-        <ModalContent>
-          <Typography variant="h6" component="h2" gutterBottom>
-            {editingItem ? "Update item" : "Add item"}
-          </Typography>
-          <TextField
-            fullWidth
-            label="Item"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            error={!itemName.trim()}
-            helperText={!itemName.trim() ? "Item name is required." : ""}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Quantity"
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-            error={quantity < 0}
-            helperText={quantity <= 0 ? "Quantity must be greater than 0." : ""}
-            sx={{ mb: 2 }}
-          />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Unit</InputLabel>
-            <Select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              label="Unit"
-            >
-              {unitOptions.map((unitOption) => (
-                <MenuItem key={unitOption} value={unitOption}>
-                  {unitOption}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            fullWidth
-            label="Expiration Date"
-            type="date"
-            value={expirationDate}
-            onChange={(e) => setExpirationDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ mb: 2 }}
-          />
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleAddOrUpdateItem}
-            disabled={!itemName.trim() || quantity <= 0}
-          >
-            {editingItem ? "Save" : "Add Item"}
-          </Button>
-          {error && (
-            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
-              {error}
-            </Typography>
-          )}
-        </ModalContent>
-      </StyledModal>
-    </Container>
+                  {[
+                    "g",
+                    "kg",
+                    "lbs",
+                    "oz",
+                    "ml",
+                    "L",
+                    "tsp",
+                    "tbsp",
+                    "fl oz",
+                    "cups",
+                    "pints",
+                    "quarts",
+                    "gallons",
+                    "pcs",
+                    "packs",
+                    "cans",
+                    "bottles",
+                    "jars",
+                    "boxes",
+                  ].map((u) => (
+                    <MenuItem key={u} value={u}>
+                      {u}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Expiration Date"
+                type="date"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() =>
+                  addOrUpdateItem(itemName, quantity, unit, expirationDate)
+                }
+                disabled={!itemName.trim() || quantity <= 0}
+              >
+                {editingItem ? "Update Item" : "Add Item"}
+              </Button>
+            </ModalContent>
+          </StyledModal>
+        </Box>
+        <Box height="25px"></Box>
+        <Footer name="Haru Sakai" />
+      </Box>
+    </ThemeProvider>
   );
 }

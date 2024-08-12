@@ -1,98 +1,114 @@
-# Pantry Management and Recipe Recommendation App
 
-## Overview
+# Pantry Recipe Dashboard
 
-This application helps manage pantry items and provides recipe recommendations based on the available ingredients. It allows users to add, update, and delete pantry items, and it can generate recipe suggestions using the pantry's contents.
+A web application that helps users manage their pantry items and provides recipe recommendations based on the available pantry items.
 
 ## Features
 
 - **Pantry Management**: Add, edit, and delete pantry items.
-- **Search Functionality**: Filter pantry items based on a search query.
-- **Recipe Recommendations**: Generate recipe ideas using pantry items.
-- **Expiration Handling**: Highlight expired items and delete them if necessary.
+- **Recipe Recommendations**: View recipe recommendations based on pantry items.
+- **Search Functionality**: Search for pantry items.
+- **Responsive Design**: Works well on both desktop and mobile devices.
 
-## Technologies Used
+## Tech Stack
 
-- **Frontend**: React, Material-UI
-- **Backend**: Firebase Firestore
-- **API**: OpenAI (for recipe recommendations)
-- **Utilities**: `date-fns` (for date calculations)
+- **Frontend**: React, Next.js, Material-UI
+- **Backend**: Firebase
+- **APIs**: OpenAI for recipe recommendations
 
-## Setup
+## Getting Started
 
 ### Prerequisites
 
-Ensure you have the following installed:
-
-- [Node.js](https://nodejs.org/) (version 14 or higher)
-- [npm](https://www.npmjs.com/) (comes with Node.js)
+- Node.js (>= 14.x)
+- npm
 
 ### Installation
 
-1. **Clone the repository:**
+1. **Clone the repository**
 
-    ```bash
-    git clone https://github.com/yourusername/pantry-management-app.git
-    cd pantry-management-app
-    ```
+- git clone https://github.com/yourusername/pantry-manager.git
+- cd pantry-recipe-dashboard
 
-2. **Install dependencies:**
+2. Install dependencies
 
-    ```bash
-    npm install
-    ```
+- npm install
 
-3. **Configure Firebase:**
+3. Set up Firebase
 
-    Create a file named `.env.local` in the root directory of your project with the following content:
+- Create a Firebase project at Firebase Console
+- Add a new web app to the project
+- Copy the Firebase configuration and replace the placeholders in src/firebase.js:
 
-    ```env
-    NEXT_PUBLIC_FIREBASE_API_KEY=YOUR_API_KEY
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=YOUR_AUTH_DOMAIN
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=YOUR_PROJECT_ID
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=YOUR_STORAGE_BUCKET
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=YOUR_MESSAGING_SENDER_ID
-    NEXT_PUBLIC_FIREBASE_APP_ID=YOUR_APP_ID
-    ```
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID",
+};
 
-    Replace the placeholder values with your Firebase project configuration.
+4. Set up OpenAI API
 
-4. **Run the development server:**
+- Get your OpenAI API key from OpenAI
+- Replace the placeholder in your API call file (e.g., src/api/recipes.js) with your OpenAI API key:
 
-    ```bash
-    npm run dev
-    ```
+const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
-    Your app should now be running at `http://localhost:3000`.
+5. Run the development server
 
-## Usage
+npm run dev
 
-- **Pantry Management**:
-  - Add new items using the "Add New Item" button.
-  - Edit existing items by clicking the edit icon next to the item.
-  - Delete items using the delete icon.
+4. Open http://localhost:3000 to see the application in action.
 
-- **Search**:
-  - Use the search bar to filter pantry items by name.
+##Usage
+1. Add Pantry Items
 
-- **Recipe Recommendations**:
-  - Click the "Generate Recipes" button to get recipe suggestions based on the pantry items.
+- Click the "Add Item" button to add a new pantry item.
+- Fill in the details and save.
 
-## API Integration
+2. Edit or Delete Pantry Items
 
-### Recipe Recommendations
+- Use the edit and delete icons next to each pantry item to modify or remove them.
 
-The recipe recommendations are fetched from an external API. Make sure to configure the API endpoint in `api/recipe.js` and handle any required authentication.
+3. View Recipe Recommendations
 
-## Contributing
+- The right section displays recipes based on the items in your pantry.
 
-Contributions are welcome! Please open an issue or submit a pull request to contribute to this project.
+##Folder Structure
 
-## License
+pantry-manager/
+├── public/
+├── app/
+│   ├── api/
+│   │   ├── recipes
+│   │   │   └── route.js
+│   │   └── shoppingLists
+│   │   │   └── route.js
+│   ├── page.js
+│   └── layout.js
+├── .gitignore
+├── README.md
+├── firebase.js
+├── package.json
+└── next.config.js
 
-This project is licensed under the [MIT License](LICENSE).
+##Contributing
 
-## Contact
+1. Fork the repository
+2. Create your feature branch (git checkout -b feature/AmazingFeature)
+3. Commit your changes (git commit -m 'Add some AmazingFeature')
+4. Push to the branch (git push origin feature/AmazingFeature)
+5. Open a pull request
 
-For any questions or feedback, please contact [your-email@example.com](mailto:your-email@example.com).
+##License
+
+- Distributed under the MIT License. See LICENSE for more information.
+
+##Contact
+- Haru - harusakai0515@gmail.com
+
+
+
 
