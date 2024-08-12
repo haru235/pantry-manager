@@ -16,13 +16,24 @@ export async function POST(req) {
   const { pantryItems, budget } = await req.json();
 
   try {
-    const prompt = `Based on these pantry items: ${pantryItems.join(
-      ", "
-    )}, generate a shopping list with a budget of ${budget} to make a healthy meal in following format: {"items": [{"item": "chicken breast", "quantity": "2", "unit": "lbs"}, ...]} without extra text. Units should match one of the following: "g", "kg", "lbs", "oz", "ml", "L", "tsp", "tbsp", "fl oz", "cups", "pints", "quarts", "gallons", "pcs", "packs", "cans", "bottles", "jars", "boxes"`;
+    const prompt = `
+    Based on these pantry items: ${pantryItems.join(", ")}, 
+    generate a shopping list with a budget of ${budget} to make a healthy meal in following format: 
+    {
+      "items": [
+        {
+          "item": str, 
+          "quantity": num, 
+          "unit": str
+        }
+      ]
+    } 
+    Units should match one of the following: "g", "kg", "lbs", "oz", "ml", "L", "tsp", "tbsp", "fl oz", "cups", "pints", "quarts", "gallons", "pcs", "packs", "cans", "bottles", "jars", "boxes"`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "system", content: prompt }],
+      response_format: {type: "json_object"}
     });
 
     const shoppingList = JSON.parse(response.choices[0].message.content.trim());
