@@ -17,15 +17,26 @@ export async function POST(req) {
   console.log(prev)
 
   try {
-    let prompt = `Following are pantry items: ${ingredients.join(', ')}. Give me a recipe suggestion in following format: {"title": "", "servingSize": "", "prepTime": "", "cookTime": "", "ingredientsNeeded": ["item1", "item2" (with amount needed for this recipe)], "instructions": ["step1". "step2"]} without extra text.`;
+    let prompt = `
+    Following are pantry items: ${ingredients.join(', ')}. 
+    Give me a recipe suggestion in following format: 
+    {
+      "title": str,
+      "servingSize": str,
+      "prepTime": str,
+      "cookTime": str,
+      "ingredientsNeeded": ["item1", "item2" (with amount needed for this recipe)],
+      "instructions": ["step1". "step2"]
+    }`;
     if (prev) 
       prompt += `Something other than ${prev}`
     console.log(prompt);
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "user", content: prompt }
+        { role: "system", content: prompt }
       ],
+      response_format: {type: 'json_object'}
     });
 
     return new Response(JSON.stringify(response.choices[0].message.content.trim()), {
